@@ -6,7 +6,7 @@ version = "0.0.2"
 keywords = ["incremental", "parsing", "sql"]
 categories = ["parsing", "text-editors"]
 repository = "https://github.com/m-novikov/tree-sitter-sql"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 
 build = "bindings/rust/build.rs"
@@ -21,7 +21,7 @@ include = [
 path = "bindings/rust/lib.rs"
 
 [dependencies]
-tree-sitter = "0.19.3"
+tree-sitter = "0.20.6"
 
 [build-dependencies]
 cc = "1.0"
