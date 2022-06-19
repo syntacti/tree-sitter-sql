@@ -1,4 +1,25 @@
 ================================================================================
+Numbers
+================================================================================
+
+SELECT 1, 1.2, -5, -1.3, 1E-37, 1E+37;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (select_statement
+    (select_clause
+      (select_clause_body
+        (number)
+        (number)
+        (unary_expression
+          (number))
+        (unary_expression
+          (number))
+        (number)
+        (number)))))
+
+================================================================================
 SELECT statement
 ================================================================================
 
@@ -14,7 +35,8 @@ SELECT interval '1 minute';
     (select_clause
       (select_clause_body
         (interval_expression
-          (string))))))
+          (string
+            (content)))))))
 
 ================================================================================
 SELECT statement with distinct expression
@@ -120,13 +142,39 @@ GROUP BY lower(a), b;
 SELECT statement with order by
 ================================================================================
 
-SELECT a, b
-FROM table1
-ORDER BY lower(a), b;
+SELECT a, b FROM table1 ORDER BY lower(a), b;
+SELECT a, b FROM table1 ORDER BY lower(a), b ASC;
+SELECT a, b FROM table1 ORDER BY lower(a), b DESC;
 
 --------------------------------------------------------------------------------
 
 (source_file
+  (select_statement
+    (select_clause
+      (select_clause_body
+        (identifier)
+        (identifier)))
+    (from_clause
+      (identifier))
+    (order_by_clause
+      (order_by_clause_body
+        (function_call
+          (identifier)
+          (identifier))
+        (identifier))))
+  (select_statement
+    (select_clause
+      (select_clause_body
+        (identifier)
+        (identifier)))
+    (from_clause
+      (identifier))
+    (order_by_clause
+      (order_by_clause_body
+        (function_call
+          (identifier)
+          (identifier))
+        (identifier))))
   (select_statement
     (select_clause
       (select_clause_body
@@ -202,7 +250,8 @@ SELECT '';
   (select_statement
     (select_clause
       (select_clause_body
-        (string)))))
+        (string
+          (content))))))
 
 ================================================================================
 SELECT statement with dollar quoted string
@@ -216,7 +265,8 @@ SELECT $$hey$$;
   (select_statement
     (select_clause
       (select_clause_body
-        (string)))))
+        (string
+          (content))))))
 
 ================================================================================
 SELECT statement with dollar quoted brackets inside
@@ -230,7 +280,8 @@ SELECT $$(a + b)$$;
   (select_statement
     (select_clause
       (select_clause_body
-        (string)))))
+        (string
+          (content))))))
 
 ================================================================================
 SELECT statement with type cast
@@ -245,7 +296,8 @@ SELECT ''::JSONB;
     (select_clause
       (select_clause_body
         (type_cast
-          (string)
+          (string
+            (content))
           (type
             (identifier)))))))
 
@@ -444,7 +496,7 @@ SELECT foo(bar, baz) < 10;
 SELECT expression with function without args
 ================================================================================
 
-SELECT foo();
+SELECT foo(), test.bar(1, 2, 3);
 
 --------------------------------------------------------------------------------
 
@@ -453,7 +505,14 @@ SELECT foo();
     (select_clause
       (select_clause_body
         (function_call
-          (identifier))))))
+          (identifier))
+        (function_call
+          (dotted_name
+            (identifier)
+            (identifier))
+          (number)
+          (number)
+          (number))))))
 
 ================================================================================
 SELECT comparison expression boolean
@@ -528,7 +587,8 @@ SELECT 'aaaa'
   (select_statement
     (select_clause
       (select_clause_body
-        (string)))))
+        (string
+          (content))))))
 
 ================================================================================
 SELECT weird_string
@@ -542,7 +602,8 @@ SELECT '%{a.b}'
   (select_statement
     (select_clause
       (select_clause_body
-        (string)))))
+        (string
+          (content))))))
 
 ================================================================================
 SELECT field_access
@@ -556,9 +617,10 @@ SELECT foo->>'bar'
   (select_statement
     (select_clause
       (select_clause_body
-        (field_access
+        (json_access
           (identifier)
-          (string))))))
+          (string
+            (content)))))))
 
 ================================================================================
 SELECT in clause
@@ -789,9 +851,10 @@ CREATE INDEX foo_idx ON table1 (col2, (lower(col1->>'attr')));
       (identifier)
       (function_call
         (identifier)
-        (field_access
+        (json_access
           (identifier)
-          (string))))))
+          (string
+            (content)))))))
 
 ================================================================================
 CREATE INDEX using
@@ -852,8 +915,9 @@ CREATE INDEX foo_idx ON table1 (col2 DESC);
 CREATE TABLE
 ================================================================================
 
-CREATE TABLE my_table (col1 INT, col2 INT)
-CREATE TEMPORARY TABLE my_table2 (col1 INT, col2 INT)
+CREATE TABLE my_table (col1 INT, col2 INT);
+CREATE TABLE my_table () WITHOUT OIDS;
+CREATE TEMPORARY TABLE my_table2 (col1 INT, col2 INT);
 
 --------------------------------------------------------------------------------
 
@@ -869,6 +933,9 @@ CREATE TEMPORARY TABLE my_table2 (col1 INT, col2 INT)
         (identifier)
         (type
           (identifier)))))
+  (create_table_statement
+    (identifier)
+    (table_parameters))
   (create_table_statement
     (identifier)
     (table_parameters
@@ -909,7 +976,6 @@ CREATE TABLE public.my_table (
         (type
           (identifier)
           (number))
-        (time_zone_constraint)
         (null_constraint
           (NULL)))
       (table_column
@@ -917,15 +983,15 @@ CREATE TABLE public.my_table (
         (type
           (identifier)
           (number))
-        (time_zone_constraint)
         (null_constraint
           (NULL))
-        (column_default
+        (default_clause
           (binary_expression
             (function_call
               (identifier))
             (interval_expression
-              (string))))))))
+              (string
+                (content)))))))))
 
 ================================================================================
 CREATE TABLE with not null constraint
@@ -962,7 +1028,7 @@ CREATE TABLE my_table (col1 INT DEFAULT get_num())
         (identifier)
         (type
           (identifier))
-        (column_default
+        (default_clause
           (function_call
             (identifier)))))))
 
@@ -982,8 +1048,9 @@ CREATE TABLE my_table (col1 INT DEFAULT 'hey')
         (identifier)
         (type
           (identifier))
-        (column_default
-          (string))))))
+        (default_clause
+          (string
+            (content)))))))
 
 ================================================================================
 CREATE TABLE with primary key constraint
@@ -1098,7 +1165,7 @@ CREATE TABLE my_table (col1 INT DEFAULT get_val() NOT NULL)
         (identifier)
         (type
           (identifier))
-        (column_default
+        (default_clause
           (function_call
             (identifier)))
         (null_constraint
@@ -1260,7 +1327,7 @@ CREATE TABLE foo(
         (identifier)
         (type
           (identifier))
-        (column_default
+        (default_clause
           (identifier))
         (direction_constraint)))))
 
@@ -1416,7 +1483,8 @@ CREATE TABLE foo(
             (identifier)
             (identifier))
           (interval_expression
-            (string)))))))
+            (string
+              (content))))))))
 
 ================================================================================
 CREATE TABLE with foreign key constraint with columns specified
@@ -1457,6 +1525,9 @@ CREATE FUNCTION
 CREATE FUNCTION add(integer, integer) RETURNS integer
     AS 'select $1 + $2;'
     LANGUAGE SQL;
+CREATE FUNCTION add(integer, integer) RETURNS integer
+    AS $BODY$select $1 + $2;$BODY$
+    LANGUAGE SQL;
 
 --------------------------------------------------------------------------------
 
@@ -1473,7 +1544,23 @@ CREATE FUNCTION add(integer, integer) RETURNS integer
     (type
       (identifier))
     (function_body
-      (string))
+      (string
+        (content)))
+    (language))
+  (create_function_statement
+    (identifier)
+    (create_function_parameters
+      (create_function_parameter
+        (type
+          (identifier)))
+      (create_function_parameter
+        (type
+          (identifier))))
+    (type
+      (identifier))
+    (function_body
+      (string
+        (content)))
     (language)))
 
 ================================================================================
@@ -1499,7 +1586,8 @@ CREATE OR REPLACE FUNCTION add(integer, integer) RETURNS integer
     (type
       (identifier))
     (function_body
-      (string))
+      (string
+        (content)))
     (language)))
 
 ================================================================================
@@ -1522,11 +1610,11 @@ CREATE FUNCTION foo(int) RETURNS integer
     (type
       (identifier))
     (function_body
-      (string))
+      (string
+        (content)))
     (language)
     (null_hint)
     (optimizer_hint)
-    (parallel_hint)
     (parallel_hint)))
 
 ================================================================================
@@ -1558,7 +1646,8 @@ CREATE FUNCTION add(IN int, OUT int, INOUT int, VARIADIC int) RETURNS int
     (type
       (identifier))
     (function_body
-      (string))
+      (string
+        (content)))
     (language)))
 
 ================================================================================
@@ -1582,7 +1671,8 @@ CREATE FUNCTION add(text) RETURNS SETOF int
       (type
         (identifier)))
     (function_body
-      (string))
+      (string
+        (content)))
     (language)))
 
 ================================================================================
@@ -1609,7 +1699,8 @@ CREATE FUNCTION add(text) RETURNS SETOF int NOT NULL
         (null_constraint
           (NULL))))
     (function_body
-      (string))
+      (string
+        (content)))
     (language)))
 
 ================================================================================
@@ -1631,7 +1722,8 @@ CREATE FUNCTION add(integer) RETURNS integer LANGUAGE SQL AS 'select $1';
       (identifier))
     (language)
     (function_body
-      (string))))
+      (string
+        (content)))))
 
 ================================================================================
 CREATE FUNCTION with optimizer hint
@@ -1653,7 +1745,8 @@ CREATE FUNCTION add(integer) RETURNS integer STABLE LANGUAGE SQL AS 'select $1';
     (optimizer_hint)
     (language)
     (function_body
-      (string))))
+      (string
+        (content)))))
 
 ================================================================================
 CREATE FUNCTION with constrained args
@@ -1678,7 +1771,8 @@ CREATE FUNCTION add(integer NOT NULL) RETURNS integer STABLE LANGUAGE SQL AS 'se
     (optimizer_hint)
     (language)
     (function_body
-      (string))))
+      (string
+        (content)))))
 
 ================================================================================
 CREATE FUNCTION lowercase
@@ -1699,7 +1793,8 @@ create function add(integer) returns integer language sql as 'select $1';
       (identifier))
     (language)
     (function_body
-      (string))))
+      (string
+        (content)))))
 
 ================================================================================
 CREATE FUNCTION highlight function body
@@ -1720,7 +1815,8 @@ create function add(integer) returns integer language sql as 'select a, b';
       (identifier))
     (language)
     (function_body
-      (string))))
+      (string
+        (content)))))
 
 ================================================================================
 CREATE SCHEMA schema
@@ -1767,16 +1863,20 @@ SET SESSION search_path = 'test';
     (identifier))
   (set_statement
     (identifier)
-    (string))
+    (string
+      (content)))
   (set_statement
     (identifier)
-    (string))
+    (string
+      (content)))
   (set_statement
     (identifier)
-    (string))
+    (string
+      (content)))
   (set_statement
     (identifier)
-    (string)))
+    (string
+      (content))))
 
 ================================================================================
 SELECT asterisk expressions
@@ -1827,6 +1927,12 @@ CREATE EXTENSION
 
 CREATE EXTENSION postgis;
 CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS postgis SCHEMA bar;
+CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA bar;
+CREATE EXTENSION IF NOT EXISTS postgis VERSION '1.0';
+CREATE EXTENSION IF NOT EXISTS postgis WITH VERSION '1.0' SCHEMA bar;
+CREATE EXTENSION IF NOT EXISTS postgis VERSION '1.0' SCHEMA bar CASCADE;
+CREATE EXTENSION btree_gist SCHEMA test_schema_diff;
 
 --------------------------------------------------------------------------------
 
@@ -1834,7 +1940,35 @@ CREATE EXTENSION IF NOT EXISTS postgis;
   (create_extension_statement
     (identifier))
   (create_extension_statement
-    (identifier)))
+    (identifier))
+  (create_extension_statement
+    (identifier)
+    (schema
+      (identifier)))
+  (create_extension_statement
+    (identifier)
+    (schema
+      (identifier)))
+  (create_extension_statement
+    (identifier)
+    (version
+      (content)))
+  (create_extension_statement
+    (identifier)
+    (version
+      (content))
+    (schema
+      (identifier)))
+  (create_extension_statement
+    (identifier)
+    (version
+      (content))
+    (schema
+      (identifier)))
+  (create_extension_statement
+    (identifier)
+    (schema
+      (identifier))))
 
 ================================================================================
 CREATE ROLE
@@ -1995,6 +2129,8 @@ ALTER TABLE mytable0
     ADD FOREIGN KEY (mykey) REFERENCES mytable1 (col1_id)
       ON UPDATE CASCADE ON DELETE RESTRICT INITIALLY DEFERRED;
 ALTER TABLE foo SET (autovacuum_enabled = false);
+ALTER TABLE foo RENAME COLUMN bar TO baz;
+ALTER TABLE foo OWNER TO bar;
 
 --------------------------------------------------------------------------------
 
@@ -2008,7 +2144,8 @@ ALTER TABLE foo SET (autovacuum_enabled = false);
           (function_call
             (identifier)
             (type_cast
-              (string)
+              (string
+                (content))
               (type
                 (identifier))))))))
   (alter_statement
@@ -2045,7 +2182,19 @@ ALTER TABLE foo SET (autovacuum_enabled = false);
         (alter_table_action_set
           (binary_expression
             (identifier)
-            (FALSE)))))))
+            (FALSE))))))
+  (alter_statement
+    (alter_table
+      (identifier)
+      (alter_table_rename_column
+        (identifier)
+        (identifier))))
+  (alter_statement
+    (alter_table
+      (identifier)
+      (alter_table_action
+        (alter_owner
+          (identifier))))))
 
 ================================================================================
 Transaction operators
@@ -2120,3 +2269,260 @@ SELECT a.`test 1`;
         (dotted_name
           (identifier)
           (identifier))))))
+
+================================================================================
+Dollar quoted strings
+================================================================================
+
+SELECT $$a$$, $a$baz$a$, $a$$$$a$, $a$b$$a$, $TAG$afasf    $$TAG$;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (select_statement
+    (select_clause
+      (select_clause_body
+        (string
+          (content))
+        (string
+          (content))
+        (string
+          (content))
+        (string
+          (content))
+        (string
+          (content))))))
+
+================================================================================
+CASE
+================================================================================
+
+SELECT a,
+  CASE WHEN a=1 THEN 'one'
+      WHEN a=2 THEN 'two'
+      ELSE 'other'
+  END
+FROM foo;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (select_statement
+    (select_clause
+      (select_clause_body
+        (identifier)
+        (conditional_expression
+          (binary_expression
+            (identifier)
+            (number))
+          (string
+            (content))
+          (binary_expression
+            (identifier)
+            (number))
+          (string
+            (content))
+          (string
+            (content)))))
+    (from_clause
+      (identifier))))
+
+================================================================================
+Escaping quotes
+================================================================================
+
+SELECT 'O''Connor', '''', '''''', ' '' ', ' '' a'' ';
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (select_statement
+    (select_clause
+      (select_clause_body
+        (string
+          (content))
+        (string
+          (content))
+        (string
+          (content))
+        (string
+          (content))
+        (string
+          (content))))))
+
+================================================================================
+AT TIME ZONE
+================================================================================
+
+SELECT '2001-02-16 20:38:40'::TIMESTAMP AT TIME ZONE 'America/Denver';
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (select_statement
+    (select_clause
+      (select_clause_body
+        (at_time_zone_expression
+          (type_cast
+            (string
+              (content))
+            (type
+              (identifier)))
+          (string
+            (content)))))))
+
+================================================================================
+ALTER SCHEMA
+================================================================================
+
+ALTER SCHEMA bar00 OWNER TO foo;
+ALTER SCHEMA bar01 OWNER TO CURRENT_USER;
+ALTER SCHEMA bar02 RENAME TO bar03;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (alter_statement
+    (schema
+      (identifier)
+      (alter_owner
+        (identifier))))
+  (alter_statement
+    (schema
+      (identifier)
+      (alter_owner)))
+  (alter_statement
+    (schema
+      (identifier)
+      (rename
+        (identifier)))))
+
+================================================================================
+JSON accessing operators
+================================================================================
+
+SELECT
+  '[{"a":"foo"},{"b":"bar"},{"c":"baz"}]'::json->2,
+  '{"a": {"b":"foo"}}'::json->'a',
+  '[1,2,3]'::json->>2,
+  '{"a":1,"b":2}'::json->>'b',
+  '{"a": {"b":{"c": "foo"}}}'::json#>'{a,b}',
+  '{"a":[1,2,3],"b":[4,5,6]}'::json#>>'{a,2}';
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (select_statement
+    (select_clause
+      (select_clause_body
+        (json_access
+          (type_cast
+            (string
+              (content))
+            (type
+              (identifier)))
+          (number))
+        (json_access
+          (type_cast
+            (string
+              (content))
+            (type
+              (identifier)))
+          (string
+            (content)))
+        (json_access
+          (type_cast
+            (string
+              (content))
+            (type
+              (identifier)))
+          (number))
+        (json_access
+          (type_cast
+            (string
+              (content))
+            (type
+              (identifier)))
+          (string
+            (content)))
+        (json_access
+          (type_cast
+            (string
+              (content))
+            (type
+              (identifier)))
+          (string
+            (content)))
+        (json_access
+          (type_cast
+            (string
+              (content))
+            (type
+              (identifier)))
+          (string
+            (content)))))))
+
+================================================================================
+COMMENT STATEMENT
+================================================================================
+
+COMMENT ON TABLE mytable IS 'This is my table.';
+COMMENT ON TABLE mytable IS NULL;
+COMMENT ON SCHEMA myschema IS 'my schema tables';
+COMMENT ON FUNCTION public."Test]()&*^!@""'`\/#"() IS 'some comment';
+COMMENT ON COLUMN foo.bar.baz IS 'This is a comment.';
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (comment_statement
+    (identifier)
+    (string
+      (content)))
+  (comment_statement
+    (identifier)
+    (NULL))
+  (comment_statement
+    (identifier)
+    (string
+      (content)))
+  (comment_statement
+    (function_call
+      (dotted_name
+        (identifier)
+        (identifier)))
+    (string
+      (content)))
+  (comment_statement
+    (dotted_name
+      (identifier)
+      (identifier)
+      (identifier))
+    (string
+      (content))))
+
+================================================================================
+TRUNCATE STATEMENT
+================================================================================
+
+TRUNCATE mytable;
+TRUNCATE ONLY mytable;
+TRUNCATE TABLE mytable;
+TRUNCATE TABLE ONLY mytable;
+TRUNCATE mytable1, mytable1, "My Table 3";
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (truncate_statement
+    (identifier))
+  (truncate_statement
+    (identifier))
+  (truncate_statement
+    (identifier))
+  (truncate_statement
+    (identifier))
+  (truncate_statement
+    (identifier)
+    (identifier)
+    (identifier)))
